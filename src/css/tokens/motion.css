@@ -1,0 +1,23 @@
+/* Motion — só transform/opacity (exceção: stroke-dashoffset do fio). Um motor por seção. */
+:root{
+  /* easings */
+  --ease-corte:cubic-bezier(.2,.8,.2,1);     /* entrada: arranque seco, assenta suave */
+  --ease-assenta:cubic-bezier(.4,0,.2,1);    /* hover, estados */
+  --ease-afia:cubic-bezier(.4,0,1,1);        /* saída */
+  --ease-fio:linear;                         /* scroll-scrub: o fio segue o dedo, sem curva */
+  --ease-brilho:cubic-bezier(.3,0,.1,1);     /* respiração de luz (pulso do selo) */
+
+  /* durações */
+  --dur-toque:100ms;     /* press */
+  --dur-rapida:160ms;    /* hover, foco */
+  --dur-base:240ms;      /* chips, botões, cards */
+  --dur-lenta:400ms;     /* painéis, barra mobile */
+  --dur-revela:800ms;    /* reveal de seção (máx.) */
+  --dur-pulso:2400ms;    /* selo "aberto agora", pin */
+
+  --reveal-distance:16px;
+  --reveal-stagger:80ms;
+}
+@media (prefers-reduced-motion:reduce){
+  :root{--dur-toque:0.01ms;--dur-rapida:0.01ms;--dur-base:0.01ms;--dur-lenta:0.01ms;--dur-revela:0.01ms;--dur-pulso:0.01ms;--reveal-distance:0px;--reveal-stagger:0ms}
+}
