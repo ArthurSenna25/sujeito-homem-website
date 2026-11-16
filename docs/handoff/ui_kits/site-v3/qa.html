@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>QA — autoteste v3</title>
+<style>body{font:14px/1.45 system-ui,sans-serif;background:#13100d;color:#f3ebdd;margin:24px}table{border-collapse:collapse;margin:12px 0}td,th{border:1px solid #4a4033;padding:4px 8px;text-align:left;vertical-align:top}.ok{color:#8cc49a}.bad{color:#ee8b76}iframe{position:fixed;left:0;top:0;border:0;opacity:.01;pointer-events:none;z-index:-1}code{color:#e3a24b}</style></head>
+<body><h1>Autoteste — Sujeito Homem v3</h1><p id="st">rodando…</p><div id="out"></div>
+<script>
+const SITE = 'index.html', VPS = [[1366, 768], [1440, 900], [1920, 1080], [390, 844]];
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const inter = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+const lbl = (e) => (e.id ? '#' + e.id : '') + (e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\s+/)[0] : '') || e.tagName.toLowerCase();
+function effOp(win, e, stop) { let o = 1; for (let n = e; n && n !== stop.parentNode; n = n.parentElement) { const cs = win.getComputedStyle(n); if (cs.display === 'none' || cs.visibility === 'hidden') return 0; o *= parseFloat(cs.opacity); } return o; }
+function check(win, doc, root, name, state, pinned) {
+  const out = [], push = (type, detail) => out.push({ scene: name, state, type, detail }), H = win.innerHeight, W = win.innerWidth;
+  const skipAnc = (e) => e.closest('[data-qa-skip],.sr,[aria-hidden="true"]:not(.cf__card)');
+  // (1) sobreposição entre irmãos importantes
+  root.querySelectorAll('[data-qa-group]').concat ? 0 : 0;
+  const groups = [...root.querySelectorAll('[data-qa-group]')]; if (root.matches('[data-qa-group]')) groups.push(root);
+  groups.forEach((g) => {
+    const kids = [...g.children].filter((k) => { const cs = win.getComputedStyle(k), r = k.getBoundingClientRect(); return r.width > 2 && r.height > 2 && cs.position !== 'absolute' && cs.position !== 'fixed' && effOp(win, k, k) > 0.05 && !k.matches('[data-qa-skip]'); });
+    for (let i = 0; i < kids.length; i++) for (let j = i + 1; j < kids.length; j++) { const a = inter(kids[i].getBoundingClientRect(), kids[j].getBoundingClientRect()); if (a > 6) push('sobreposição', `${lbl(kids[i])} × ${lbl(kids[j])} (${Math.round(a)}px²)`); }
+  });
+  // cartões do carrossel (≤3 visíveis, sem sobreposição)
+  const vis = [...root.querySelectorAll('.cf__card')].filter((c) => effOp(win, c, c) > 0.05 && win.getComputedStyle(c).visibility !== 'hidden' && !root.querySelector('.cf--snap'));
+  if (vis.length > 3) push('carrossel', `${vis.length} cartões visíveis (máx. 3)`);
+  for (let i = 0; i < vis.length; i++) for (let j = i + 1; j < vis.length; j++) { const a = inter(vis[i].getBoundingClientRect(), vis[j].getBoundingClientRect()); if (a > 6) push('sobreposição', `cartão ${vis[i].dataset.i} × cartão ${vis[j].dataset.i} (${Math.round(a)}px²)`); }
+  // (2) texto cortado
+  const rb = root.getBoundingClientRect(), R4 = (r) => `[${Math.round(r.left)},${Math.round(r.top)}→${Math.round(r.right)},${Math.round(r.bottom)}]`;
+  root.querySelectorAll('*').forEach((e) => {
+    if (!([...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()))) return;
+    if (skipAnc(e) || effOp(win, e, root) < 0.05) return;
+    const cs = win.getComputedStyle(e);
+    if (e.clientWidth > 0 && e.scrollWidth > e.clientWidth + 1 && /hidden|clip|auto|scroll/.test(cs.overflowX) && cs.display !== 'inline') push('texto cortado (scrollWidth>clientWidth)', `${lbl(e)} "${e.textContent.trim().slice(0, 30)}"`);
+    if (e.clientHeight > 0 && e.scrollHeight > e.clientHeight + 1 && /hidden|clip|auto|scroll/.test(cs.overflowY) && cs.display !== 'inline') push('texto cortado (scrollHeight>clientHeight)', `${lbl(e)} "${e.textContent.trim().slice(0, 30)}"`);
+    const rg = doc.createRange(); rg.selectNodeContents(e); const r0 = rg.getBoundingClientRect(); if (r0.width < 1) return; const er = e.getBoundingClientRect(), scr = !!e.closest('[data-qa-scroll]'); const r = { left: r0.left, right: r0.right, top: Math.max(er.top, r0.top), bottom: Math.min(er.bottom, r0.bottom) }; if (cs.display === 'inline') { r.top = r0.top; r.bottom = r0.bottom; }
+    if (!scr && (r.right > W + 1 || r.left < -1)) push('texto fora da viewport (horizontal)', `${lbl(e)} "${e.textContent.trim().slice(0, 30)}" [${Math.round(r.left)}..${Math.round(r.right)}]`);
+    if (pinned && (r.bottom > H + 1 || r.top < -1)) push('texto fora da viewport (vertical, cena pinned)', `${lbl(e)} "${e.textContent.trim().slice(0, 30)}" [${Math.round(r.top)}..${Math.round(r.bottom)}]`);
+    for (let a = e.parentElement; a && a !== doc.body; a = a.parentElement) { const ac = win.getComputedStyle(a); if (/hidden|clip/.test(ac.overflowX) || /hidden|clip/.test(ac.overflowY)) { const ar = a.getBoundingClientRect(); if (a === doc.documentElement) break; if (r.left < ar.left - 1.5 || r.right > ar.right + 1.5 || r.top < ar.top - 1.5 || r.bottom > ar.bottom + 1.5) { if (!a.matches('[data-qa-skip],.site') && !(scr && r.top >= ar.top - 1.5 && r.bottom <= ar.bottom + 1.5)) push('texto cortado por container', `${lbl(e)} "${e.textContent.trim().slice(0, 30)}" ${R4(r)} em ${lbl(a)} ${R4(ar)}`); } break; } }
+  });
+  return out;
+}
+async function runVp(w, h) {
+  const fr = document.createElement('iframe'); fr.style.width = w + 'px'; fr.style.height = h + 'px'; fr.src = SITE + '?qa'; document.body.appendChild(fr);
+  await new Promise((r) => (fr.onload = r)); const win = fr.contentWindow, doc = fr.contentDocument; await sleep(2500);
+  const mp = doc.querySelector('#mapa'); win.scrollTo(0, mp.getBoundingClientRect().top + win.scrollY - 1500); await sleep(4500); win.scrollTo(0, 0); await sleep(500);
+  const res = { vp: `${w}×${h}`, issues: [], pins: [], notes: [] }, add = (a) => a.forEach((i) => res.issues.push(i));
+  // (3) overflow horizontal
+  const sw = doc.documentElement.scrollWidth; if (sw > win.innerWidth + 1) res.issues.push({ scene: 'documento', state: 'topo', type: 'overflow horizontal', detail: `scrollWidth ${sw} > ${win.innerWidth}` });
+  const sts = win.ScrollTrigger ? win.ScrollTrigger.getAll().filter((t) => t.pin) : [];
+  const handled = new Set();
+  // (4) pin ≤ viewport + estados ao longo do pin
+  for (const t of sts) {
+    const el = t.pin, nm = lbl(el), ph = el.offsetHeight; handled.add(el); res.pins.push({ name: nm, h: ph, ok: ph <= h + 1 }); if (ph > h + 1) res.issues.push({ scene: nm, state: 'pin', type: 'pin maior que a viewport', detail: `${ph}px > ${h}px` });
+    if (nm.includes('atd')) win.SH && win.SH.qaFill && 0;
+    for (const p of [0.03, 0.34, 0.68, 0.97]) {
+      win.ScrollTrigger.refresh(); await sleep(250); const y = t.start + p * (t.end - t.start); win.scrollTo(0, y); await sleep(1700);
+      if (nm.includes('atd') && p === 0.68) { win.SH.qaFill(); await sleep(500); }
+      if (nm.includes('mapa') || el.id === 'mapScene') { if (p === 0.68) { doc.querySelector('#mapNav').classList.add('is-open'); const ri = doc.querySelector('#routeInfo'); ri.hidden = false; ri.innerHTML = '<div class="route__n"><span>3,2<small>km</small></span><span>9<small>min</small></span></div><span class="route__demo">demo · rota ilustrativa</span>'; await sleep(1100); } }
+      add(check(win, doc, el, nm, `p=${p} y=${Math.round(win.scrollY)}${nm.includes('atd') && p === 0.68 ? ' · comanda com 8 itens' : ''}${(nm.includes('mapa') || el.id === 'mapScene') && p === 0.68 ? ' · navegação aberta' : ''}`, true));
+    }
+  }
+  // cenas sem pin (mobile / fluxo) e grupos soltos
+  const targets = [...doc.querySelectorAll('[data-qa-pin]')].filter((e) => !handled.has(e) && !sts.some((t) => t.pin.contains(e)));
+  const loose = [...doc.querySelectorAll('[data-qa-group]')].filter((g) => !g.closest('[data-qa-pin]'));
+  for (const e of targets.concat(loose.map((g) => g.closest('section')))) {
+    const y = e.getBoundingClientRect().top + win.scrollY - 70; win.scrollTo(0, y); await sleep(1700);
+    if (e.id === 'atendimento' || e.querySelector('#cf')) { win.SH.qaFill(); await sleep(300); }
+    if (e.querySelector('#mapNav')) { doc.querySelector('#mapPanel').classList.add('is-open'); await sleep(900); }
+    if (e.id === 'agendar') { doc.querySelector('#finalH').classList.add('in'); await sleep(1400); }
+    add(check(win, doc, e, lbl(e), 'fluxo', false));
+  }
+  win.scrollTo(0, 0); fr.remove(); return res;
+}
+(async () => {
+  const all = [];
+  const only = new URLSearchParams(location.search).get('only'); for (const [w, h] of VPS.filter(([w]) => !only || String(w) === only)) { document.getElementById('st').textContent = `testando ${w}×${h}…`; try { all.push(await runVp(w, h)); } catch (e) { all.push({ vp: `${w}×${h}`, issues: [{ scene: '—', state: '—', type: 'falha do teste', detail: String(e) }], pins: [] }); } window.__qa = { done: false, all }; }
+  window.__qa = { done: true, all }; document.getElementById('st').textContent = 'concluído';
+  document.getElementById('out').innerHTML = all.map((r) => `<h2>${r.vp} — <span class="${r.issues.length ? 'bad' : 'ok'}">${r.issues.length} problema(s)</span></h2><p>Pins: ${r.pins.map((p) => `${p.name} ${p.h}px ${p.ok ? '✓' : '✗'}`).join(' · ') || 'sem pin'}</p>${r.issues.length ? '<table><tr><th>cena</th><th>estado</th><th>tipo</th><th>detalhe</th></tr>' + r.issues.map((i) => `<tr><td>${i.scene}</td><td>${i.state}</td><td>${i.type}</td><td>${i.detail}</td></tr>`).join('') + '</table>' : ''}`).join('');
+})();
+</script></body></html>

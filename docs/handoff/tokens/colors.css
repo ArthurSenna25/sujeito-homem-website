@@ -1,0 +1,72 @@
+/* Cor — Versão A "Lamparina" (padrão). Versão B "Latão": <html data-palette="latao">.
+   Todos os pares de texto abaixo foram medidos: ≥ 4,5:1 (texto) · ≥ 3:1 (UI/texto grande). */
+:root{
+  /* primitivas */
+  --sh-base:#13100D;        /* quase-preto quente — nunca #000 */
+  --sh-surface-1:#1C1814;   /* cartões, seções alternadas */
+  --sh-surface-2:#272119;   /* elevado: chips, inputs, hover */
+  --sh-line:#4A4033;        /* fio decorativo (1,9:1 — nunca para delimitar controle) */
+  --sh-line-strong:#8B7E6B; /* borda de controle ≥ 3:1 */
+  --sh-text:#F3EBDD;        /* off-white quente */
+  --sh-text-2:#BEB2A0;
+  --sh-text-3:#968B79;      /* mínimo 4,7:1 em surface-2 */
+  --sh-gold:#E3A24B;        /* âmbar de lamparina — a luz */
+  --sh-gold-hi:#F2BC6A;     /* hover / ponta do fio */
+  --sh-gold-lo:#A86F26;     /* pressionado / só não-texto */
+  --sh-on-gold:#1A1208;     /* texto sobre ouro (8,4:1) */
+  --sh-slate:#2E3A47;       /* azul-ardósia: só sombras e contraste frio */
+  --sh-slate-hi:#6F8296;
+  --sh-ok:#8CC49A;
+  --sh-err:#EE8B76;
+  --sh-glow-rgb:227,162,75;    /* canal do ouro p/ rgba() de brilho */
+  --sh-shadow-rgb:8,12,18;     /* sombra tingida de ardósia */
+
+  /* semânticos */
+  --bg:var(--sh-base);
+  --surface-1:var(--sh-surface-1);
+  --surface-2:var(--sh-surface-2);
+  --text-1:var(--sh-text);
+  --text-2:var(--sh-text-2);
+  --text-3:var(--sh-text-3);
+  --accent:var(--sh-gold);
+  --accent-hover:var(--sh-gold-hi);
+  --accent-press:var(--sh-gold-lo);
+  --on-accent:var(--sh-on-gold);
+  --accent-wash:rgba(var(--sh-glow-rgb),.12);   /* fundo de item selecionado */
+  --accent-wash-strong:rgba(var(--sh-glow-rgb),.22);
+  --cool:var(--sh-slate);
+  --cool-hi:var(--sh-slate-hi);
+  --border-hairline:var(--sh-line);
+  --border-control:var(--sh-line-strong);
+  --focus-ring:var(--sh-gold-hi);
+  --state-ok:var(--sh-ok);
+  --state-err:var(--sh-err);
+  --overlay-scrim:rgba(19,16,13,.72);
+
+  /* luz (gradientes — sempre como brilho, nunca como fundo chapado) */
+  --light-pool:radial-gradient(60% 60% at 50% 0%,rgba(var(--sh-glow-rgb),.16),transparent 70%);
+  --light-edge:linear-gradient(90deg,transparent,var(--sh-gold-hi) 50%,transparent);
+  --fio-gradient:linear-gradient(180deg,var(--sh-gold-lo),var(--sh-gold) 40%,var(--sh-gold-hi));
+  --photo-protect:linear-gradient(180deg,rgba(19,16,13,0) 35%,rgba(19,16,13,.55) 70%,rgba(19,16,13,.92));
+  --photo-filter:saturate(.92) contrast(1.04);
+}
+
+/* Versão B — Latão escovado: mais seco e sóbrio, menos laranja */
+:root[data-palette="latao"]{
+  --sh-base:#11110F;
+  --sh-surface-1:#1A1A17;
+  --sh-surface-2:#242420;
+  --sh-line:#45453D;
+  --sh-line-strong:#878272;
+  --sh-text:#F2EEE4;
+  --sh-text-2:#B9B4A5;
+  --sh-text-3:#928D7E;
+  --sh-gold:#C8A457;
+  --sh-gold-hi:#DDBE74;
+  --sh-gold-lo:#8E7233;
+  --sh-on-gold:#16130A;
+  --sh-slate:#2A3440;
+  --sh-slate-hi:#6C7D90;
+  --sh-glow-rgb:200,164,87;
+  --overlay-scrim:rgba(17,17,15,.72);
+}

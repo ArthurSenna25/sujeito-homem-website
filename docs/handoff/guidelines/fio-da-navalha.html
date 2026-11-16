@@ -1,0 +1,49 @@
+<!-- @dsCard group="Signature" viewport="700x760" subtitle="Como o fio atravessa os 5 atos — desktop e mobile (diagrama com fio a 100%)" name="O fio da navalha · comportamento" -->
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"><link rel="stylesheet" href="_card.css">
+<style>
+.wf{position:relative;display:flex;flex-direction:column;gap:10px;padding:0 10px 0 var(--wl);background:var(--surface-1);border-radius:8px;overflow:hidden;--wl:30px}
+.wf--m{--wl:28px}
+.act{border:1px dashed var(--border-control);border-radius:6px;padding:8px 10px;font:11px/1.3 ui-monospace,monospace;color:var(--text-2);position:relative}
+.act b{color:var(--text-1);display:block;margin-bottom:2px}
+.ph{height:26px;margin-top:6px;background:repeating-linear-gradient(135deg,#211c17 0 8px,#2a241d 8px 16px);border-radius:3px}
+.leg{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13px;line-height:1.4}
+.leg b{color:var(--accent);font-family:var(--font-display);white-space:nowrap}
+.leg span{color:var(--text-2)}
+.sp{position:relative;height:30px;margin:6px 0 0 6px}.sp i{position:absolute;left:3px;top:0;bottom:0;width:1px}
+.nd{position:absolute;left:0;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script><script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script><script src="../ds-load.js"></script></head>
+<body><div id="root"></div>
+<script type="text/plain" id="demo">
+function Wire({mobile}){
+  return <div className={'wf'+(mobile?' wf--m':'')} style={{padding:'10px 10px 14px var(--wl)'}}>
+    <FioDaNavalha progress={1} breakpoint={400} />
+    <div className="act" data-fio-stop="rail" data-fio-y="26" style={{height:mobile?92:84}}><b>I · Hero</b>nasce aqui, 1ª linha do título<div className="ph"/></div>
+    <div className="act" data-fio-stop="spine"><b>II · História</b>vira a espinha da timeline
+      <div className="sp"><i data-fio-spine/></div></div>
+    <div className="act" data-fio-stop="rail" data-fio-y="26"><b>III · Serviços</b>passa pela margem, chips acendem<div className="ph" style={{height:14}}/></div>
+    <div className="act" data-fio-stop="rail" data-fio-y="26"><b>IV · Equipe</b>acompanha os cards</div>
+    <div className="act" style={{height:mobile?230:210}}><b>V · Endereço</b>vira a rota
+      <div data-fio-stop="route" data-fio-y="6" style={{position:'absolute',left:6,right:6,top:42,bottom:8}}>
+        <div style={{position:'absolute',right:mobile?'38%':'14%',top:'66%'}}><MapPin showLabel={false}/></div></div></div>
+  </div>;
+}
+function Demo(){
+  return <div className="col" style={{gap:18}}>
+    <div className="row" style={{alignItems:'flex-start',gap:20,flexWrap:'nowrap'}}>
+      <div style={{flex:'1 1 0',minWidth:0}}><div className="mono" style={{marginBottom:6}}>DESKTOP ≥ 768 · trilho 12–36px</div><Wire/></div>
+      <div style={{width:210,flex:'none'}}><div className="mono" style={{marginBottom:6}}>MOBILE &lt; 768 · trilho 12px</div><Wire mobile/></div>
+    </div>
+    <div className="leg">
+      <b>Nascimento</b><span>Começa no hero, ao lado da 1ª linha do título, com a ponta (faísca) acesa. Scroll 0 = só a faísca.</span>
+      <b>Atos I, III, IV</b><span>Corre reto pela margem. Cada elemento <code>data-fio-lit</code> que a ponta cruza recebe <code>data-lit="true"</code> (chip, nó, card) — acende em 240ms.</span>
+      <b>Ato II</b><span>Desvia 90° para dentro e se torna a espinha da linha do tempo; cada nó acende ao ser alcançado; volta à margem ao fim.</span>
+      <b>Ato V</b><span>Sai da margem, vira rota de ruas (ângulos de 90°, raio 16px) até o núcleo do pin <code>data-fio-end</code>. Pin pulsa quando p = 1.</span>
+      <b>Mobile</b><span>Trilho de 12px (traço 1,25px), sem desvio: a timeline é alinhada ao trilho. A barra de CTA cobre o fio por baixo (z-index 50 &gt; 4). Rota com raio 10px.</span>
+      <b>Movimento</b><span>Ponta fica a 55% da altura da tela · 1:1 com o scroll (<code>--ease-fio</code>: linear) · reduced-motion: fio inteiro, sem scrub.</span>
+    </div>
+  </div>;
+}
+</script>
+<script>DS_run(['components/core/Icon.jsx','components/map/MapPin.jsx','components/signature/FioDaNavalha.jsx'],'../')</script>
+</body></html>
