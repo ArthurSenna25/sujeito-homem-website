@@ -26,7 +26,7 @@ body{overflow-x:clip}
 .kit-nav a{white-space:nowrap;display:inline-flex;align-items:center;min-height:var(--tap);padding:0 var(--space-1);color:var(--text-2);text-decoration:none;font-weight:var(--weight-strong);font-size:var(--text-caption)}.kit-nav a:hover{color:var(--text-1)}
 
 /* ===== 1 · HERO — janela de cena à direita, nascendo do escuro por máscara ===== */
-.hero{position:relative;min-height:calc(100svh - var(--hdr));display:grid;grid-template-columns:minmax(0,1fr) min(44vw,760px);grid-template-rows:minmax(0,1fr);overflow:hidden;isolation:isolate}
+.hero{position:relative;min-height:calc(100vh - var(--hdr));min-height:calc(100svh - var(--hdr));display:grid;grid-template-columns:minmax(0,1fr) min(44vw,760px);grid-template-rows:minmax(0,1fr);overflow:hidden;isolation:isolate}
 .hero__bg{position:absolute;inset:0;z-index:-3;overflow:hidden;background:radial-gradient(70% 80% at 78% 40%,#3a2915,#13100d 70%)}/* TROCAR: placeholder CSS até hero/plate-desktop.webp existir */
 .hero__drift{position:absolute;inset:-16px;will-change:transform}
 .hero__poster,.hero__seq{position:absolute;inset:-3% -3%;width:106%;height:106%;object-fit:cover;object-position:60% 50%}
@@ -43,15 +43,18 @@ body{overflow-x:clip}
 .hero__photo{grid-column:2;grid-row:1;align-self:stretch;margin:0;position:relative;display:grid;grid-template:minmax(0,1fr)/minmax(0,1fr);overflow:hidden;isolation:isolate;will-change:transform;
   -webkit-mask-image:linear-gradient(to right,transparent 0%,#000 38%),linear-gradient(to bottom,transparent 0,#000 12%,#000 88%,transparent 100%);-webkit-mask-composite:source-in;
   mask-image:linear-gradient(to right,transparent 0%,#000 38%),linear-gradient(to bottom,transparent 0,#000 12%,#000 88%,transparent 100%);mask-composite:intersect}
-.hero__photo>*{grid-area:1/1;pointer-events:none}
-.hero__photo>img{width:100%;height:100%;object-fit:cover;object-position:50% 12%;filter:var(--grade) brightness(.86)}
+.hero__photo picture{display:contents}.hero__photo>*,.hero__photo>picture>img{grid-area:1/1;pointer-events:none}
+.hero__photo img{width:100%;height:100%;object-fit:cover;object-position:50% 12%;filter:var(--grade) brightness(.86)}
 .hero__grade{background:#E3A24B;mix-blend-mode:soft-light;opacity:.25}
 .hero__vig{background:radial-gradient(120% 90% at 58% 42%,transparent 52%,rgba(10,8,6,.62) 100%)}
 .hero__grain{opacity:.065;mix-blend-mode:overlay;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.4 -.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 .hero__sweep{align-self:start;height:24%;background:linear-gradient(180deg,transparent,rgba(227,162,75,.6) 50%,transparent);mix-blend-mode:screen;opacity:0;will-change:transform,opacity}
-.hero-anim .hero__photo{clip-path:inset(0 0 0 100%)}
-.hero-anim .hero__h1 .ln>span{opacity:0}
-.hero-anim .hero__copy>:not(.hero__h1){opacity:0}
+/* visível por padrão; só .js-hero (adicionada no <head>) esconde p/ a entrada; .is-ready = failsafe, força tudo visível */
+.js-hero .hero__photo{-webkit-clip-path:inset(0 0 0 100%);clip-path:inset(0 0 0 100%)}
+.js-hero .hero__h1 .ln>span{opacity:0}
+.js-hero .hero__copy>:not(.hero__h1){opacity:0}
+.is-ready .hero__photo{-webkit-clip-path:none!important;clip-path:none!important}
+.is-ready .hero__h1 .ln>span,.is-ready .hero__copy>:not(.hero__h1){opacity:1!important;transform:none!important;transition:none!important}
 
 /* ===== 2 · MANIFESTO ===== */
 .manifesto{padding-top:var(--section-y);padding-bottom:var(--section-y)}
@@ -414,12 +417,20 @@ body.atd-live .sh-cta-bar{display:none}
 /* ===== MOBILE / <900 ===== */
 @media (max-width:899px){
   .kit-nav{display:none}
-  .hero{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto}
-  .hero__photo{grid-column:1;grid-row:1;align-self:start;height:56svh;
-    -webkit-mask-image:linear-gradient(to bottom,#000 55%,transparent 100%);mask-image:linear-gradient(to bottom,#000 55%,transparent 100%);-webkit-mask-composite:source-over;mask-composite:add}
-  .hero__photo>img{object-position:50% 10%}
-  .hero-anim .hero__photo{clip-path:inset(0 0 0 100%)}
-  .hero__copy{grid-row:2;padding:var(--sp-2) var(--px-r) var(--sp-8) var(--px-l)}
+  /* hero mobile: faixa de foto ≈46svh com fade na base, texto logo abaixo (sobe 40px sobre o fade). Sem blend/blur em camadas grandes. */
+  .hero{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr}
+  .hero__photo{grid-column:1;grid-row:1;align-self:start;height:46vh;height:46svh;min-height:260px;will-change:auto;
+    -webkit-mask-image:linear-gradient(to bottom,#000 55%,transparent 100%);mask-image:linear-gradient(to bottom,#000 55%,transparent 100%)}
+  .hero__photo img{object-position:50% 14%}
+  .js-hero .hero__photo{-webkit-clip-path:inset(0 0 100% 0);clip-path:inset(0 0 100% 0)}
+  .hero__beams,.hero__sweep{display:none}
+  .hero__grade{mix-blend-mode:normal;opacity:.1}.hero__grain{mix-blend-mode:normal;opacity:.05}
+  .hero__copy{grid-row:2;align-self:start;position:relative;z-index:1;margin-top:-40px;gap:8px;padding:0 20px 24px}
+  .hero__h1{font-size:clamp(1.65rem,7.9vw,2.4rem)}
+  .hero__copy .lead{margin:0 0 8px;font-size:1rem;line-height:1.45}
+  @media (max-height:760px){.hero__photo{height:41vh;height:41svh;min-height:220px}}
+  .hero__copy .row{display:flex;flex-direction:column;align-items:stretch;gap:8px;width:100%;margin-bottom:8px}
+  .hero__copy .row .sh-btn{width:100%;min-height:52px;justify-content:center}
   .hero__veil{background:linear-gradient(0deg,var(--bg) 4%,rgba(19,16,13,.78) 44%,rgba(19,16,13,.35) 100%)}
   .fb__top{padding-left:var(--gutter);padding-right:var(--gutter)}.fb__foot{padding-left:var(--gutter)}
   .faq__grid{grid-template-columns:1fr}.faq__q,.faq__panel{display:none}.faq__acc{display:block}

@@ -59,7 +59,7 @@ $$('[data-seal]').forEach((s) => { const o = openStatus(); s.className = 'sh-sea
 
 let mm = null;
 Object.defineProperty(globalThis, "mm", { get: () => mm, configurable: true });
-if (!window.gsap || !window.ScrollTrigger) { console.warn('GSAP indisponível — site estático'); document.documentElement.classList.remove('hero-anim'); } else {
+if (!window.gsap || !window.ScrollTrigger) { console.warn('GSAP indisponível — site estático'); document.documentElement.classList.add('is-ready'); } else {
   gsap.registerPlugin(ScrollTrigger);
   mm = gsap.matchMedia();
   window.__fio = FioDaNavalha($('#site'));
@@ -69,18 +69,33 @@ if (!window.gsap || !window.ScrollTrigger) { console.warn('GSAP indisponível �
   (function () {
     const hero = $('#inicio'), photo = $('#heroPhoto'), copy = $('#heroCopy'), drift = $('#heroDrift'), sweep = $('#heroSweep');
     const lines = $$('.hero__h1 .ln>span', hero), rest = $$('.hero__copy>:not(.hero__h1)', hero), root = document.documentElement;
-    mm.add({ desktop: '(min-width:900px)', reduce: '(prefers-reduced-motion: reduce)' }, (ctx) => {
+    // Entrada começa já (DOMContentLoaded): espera no máx. 800 ms por fonts.ready, nunca por imagens/load. Failsafe 1,5 s → tudo visível.
+    // Bug anterior: o mm.add só rodava se "desktop" ou "reduce" casassem — no mobile nada casava, a entrada nunca rodava e o estado oculto ficava.
+    const ready = () => { root.classList.add('is-ready'); root.classList.remove('js-hero'); };
+    mm.add({ all: '(min-width:0px)', desktop: '(min-width:900px)', reduce: '(prefers-reduced-motion: reduce)' }, (ctx) => {
       const { desktop, reduce } = ctx.conditions;
-      if (reduce) { root.classList.remove('hero-anim'); gsap.set([photo, ...lines, ...rest], { clearProps: 'all' }); return; }
-      root.classList.add('hero-anim');
-      // entrada: foto por clip-path (direita→esquerda), linhas do título sobem de dentro da máscara, varredura de luz única
-      gsap.set(lines, { yPercent: 105, opacity: 1 });
-      const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
-      tl.fromTo(photo, { clipPath: 'inset(0 0 0 100%)' }, { clipPath: 'inset(0 0 0 0%)', duration: 1.1 }, 0.1)
-        .to(lines, { yPercent: 0, duration: 0.9, stagger: 0.12 }, 0.2)
-        .fromTo(rest, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.7, stagger: 0.08, ease: 'power2.out' }, 0.6)
-        .fromTo(sweep, { yPercent: -110 }, { yPercent: 520, duration: 0.9, ease: 'power1.inOut' }, 1.15)
-        .fromTo(sweep, { opacity: 0 }, { opacity: 0.8, duration: 0.45, ease: 'none', yoyo: true, repeat: 1 }, 1.15);
+      if (reduce || !root.classList.contains('js-hero')) { ready(); return; } // reduced-motion / saveData / 2g-3g: sem animação, conteúdo já visível
+      let dead = false, tl = null;
+      const fs = setTimeout(() => { if (tl) tl.progress(1); ready(); }, 1500);
+      const fonts = document.fonts ? Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 800))]) : Promise.resolve();
+      fonts.then(() => {
+        if (dead) return;
+        // entrada: foto por clip-path (desktop: direita→esquerda; mobile: de cima p/ baixo), linhas do título sobem de dentro da máscara
+        gsap.set(lines, { yPercent: 105, opacity: 1 });
+        tl = gsap.timeline({ defaults: { ease: 'power3.out' }, onComplete: () => { clearTimeout(fs); ready(); } });
+        if (desktop) {
+          tl.fromTo(photo, { clipPath: 'inset(0 0 0 100%)' }, { clipPath: 'inset(0 0 0 0%)', duration: 1.1 }, 0.1)
+            .to(lines, { yPercent: 0, duration: 0.9, stagger: 0.12 }, 0.2)
+            .fromTo(rest, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.7, stagger: 0.08, ease: 'power2.out' }, 0.6)
+            .fromTo(sweep, { yPercent: -110 }, { yPercent: 520, duration: 0.9, ease: 'power1.inOut' }, 1.15)
+            .fromTo(sweep, { opacity: 0 }, { opacity: 0.8, duration: 0.45, ease: 'none', yoyo: true, repeat: 1 }, 1.15);
+        } else {
+          tl.fromTo(photo, { clipPath: 'inset(0 0 100% 0)', opacity: 0 }, { clipPath: 'inset(0 0 0% 0)', opacity: 1, duration: 0.8 }, 0)
+            .to(lines, { yPercent: 0, duration: 0.7, stagger: 0.08 }, 0.15)
+            .fromTo(rest, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.06, ease: 'power2.out' }, 0.4);
+        }
+      });
+      if (!desktop) return () => { dead = true; clearTimeout(fs); };
       // deriva lenta do cenário
       gsap.fromTo(drift, { x: -12, y: -8 }, { x: 12, y: 8, duration: 30, ease: 'sine.inOut', yoyo: true, repeat: -1 });
       if (desktop) {
@@ -92,7 +107,7 @@ if (!window.gsap || !window.ScrollTrigger) { console.warn('GSAP indisponível �
         const move = (nx, ny) => items.forEach((i) => { i.qx(-nx * 20 * i.d); i.qy(-ny * 12 * i.d); });
         const mv = (e) => { if (e.pointerType !== 'mouse') return; const r = hero.getBoundingClientRect(); move((e.clientX - r.left) / r.width - 0.5, (e.clientY - r.top) / r.height - 0.5); }, lv = () => move(0, 0);
         hero.addEventListener('pointermove', mv); hero.addEventListener('pointerleave', lv);
-        return () => { hero.removeEventListener('pointermove', mv); hero.removeEventListener('pointerleave', lv); };
+        return () => { dead = true; clearTimeout(fs); hero.removeEventListener('pointermove', mv); hero.removeEventListener('pointerleave', lv); };
       }
     });
   })();
